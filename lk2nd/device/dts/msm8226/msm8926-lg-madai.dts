@@ -12,7 +12,7 @@
 	model = "LG Fx0";
 	compatible = "lg,madai";
 
-	// FIXME: lk2nd,dtb-files = "...";
+	lk2nd,dtb-files = "msm8926-lg-madai";
 
 	gpio-keys {
 		compatible = "gpio-keys";
