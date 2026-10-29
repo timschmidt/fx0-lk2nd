@@ -76,7 +76,13 @@ DEFINES := $(filter-out CHECK_BAT_VOLTAGE=1, $(DEFINES))
 
 include $(if $(filter msm8660 msm8960, $(TARGET)), lk2nd/project/msm8x60-late.mk)
 
-# Enable extlinux boot module for all targets with eMMC/UFS
+# Enable extlinux boot by default on targets with eMMC/UFS.
+# It can be disabled when booting only Android-format images.
+LK2ND_EXTLINUX ?= 1
+ifeq ($(LK2ND_EXTLINUX), 1)
 ifeq ($(EMMC_BOOT), 1)
 MODULES += lk2nd/boot
+endif
+else ifneq ($(LK2ND_EXTLINUX), 0)
+$(error LK2ND_EXTLINUX must be 0 or 1)
 endif
