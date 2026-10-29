@@ -9,6 +9,12 @@ boot image stored at 512k offset from the start of the `boot` partition (in lk2n
 or withoug the offset (for lk1st). The offset is required so the next stage image
 doesn't overwrite the lk2nd itself.
 
+To skip filesystem discovery and boot directly from this Android image path,
+build with `LK2ND_EXTLINUX=0`. The default is `1`, which enables the filesystem
+search described below. Disabling it also excludes filesystem boot support from
+the image; fastboot boot remains available. Install a valid Android boot image at
+the required offset before selecting this configuration.
+
 ## Fastboot boot
 
 lk2nd provides a fastboot interface and allows one to boot an OS via USB. Same as
