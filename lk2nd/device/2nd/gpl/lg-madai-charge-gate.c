@@ -13,6 +13,9 @@
 #define MADAI_CHARGE_HANDOFF "qcom,boot-charge-inhibited"
 #define MADAI_CHG_CTRL 0x1049
 #define MADAI_CHG_ENABLE 0x80
+#define MADAI_BTC_CTRL 0x1249
+#define MADAI_BTC_MASK 0x83
+#define MADAI_BTC_CONSERVATIVE 0x81
 
 static int madai_charge_write_off(void)
 {
@@ -30,7 +33,7 @@ static int madai_charge_write_off(void)
 
 static int madai_charge_inhibit(void)
 {
-	uint8_t type, subtype;
+	uint8_t type, subtype, value, verify;
 	int ret, recovery;
 
 	/* Match the actual PM8226 on SID0 before changing its charger control. */
@@ -41,6 +44,18 @@ static int madai_charge_inhibit(void)
 		return -FDT_ERR_BADVALUE;
 
 	ret = madai_charge_write_off();
+	if (!ret) {
+		/* The first-stage firmware restores its wider window on reboot. */
+		if (spmi_reg_read(0, MADAI_BTC_CTRL, &value, 0)) {
+			ret = -FDT_ERR_INTERNAL;
+		} else {
+			value = (value & ~MADAI_BTC_MASK) | MADAI_BTC_CONSERVATIVE;
+			if (spmi_reg_write(0, MADAI_BTC_CTRL, &value, 0) ||
+			    spmi_reg_read(0, MADAI_BTC_CTRL, &verify, 0) ||
+			    verify != value)
+				ret = -FDT_ERR_INTERNAL;
+		}
+	}
 	if (ret) {
 		/* A failed write may have reached hardware. Keep charging off. */
 		recovery = madai_charge_write_off();
