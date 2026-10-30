@@ -138,6 +138,9 @@ static int madai_battery_apply(void *dtb)
 		ret = madai_find_consumer(dtb, consumers[i]);
 		if (ret < 0 && !(i && ret == -FDT_ERR_NOTFOUND))
 			return ret;
+		if (!i && fdt_getprop(dtb, ret, "qcom,software-charge-control", NULL) &&
+		    fdt_getprop(dtb, ret, "lg,battery-charge-profile", NULL))
+			return -FDT_ERR_EXISTS;
 	}
 	node = fdt_add_subnode(dtb, 0, "battery");
 	if (node < 0)
@@ -158,6 +161,12 @@ static int madai_battery_apply(void *dtb)
 		ret = fdt_setprop_u32(dtb, node, "monitored-battery", phandle);
 		if (ret)
 			return ret;
+		if (!i && fdt_getprop(dtb, node, "qcom,software-charge-control", NULL)) {
+			ret = fdt_setprop_string(dtb, node, "lg,battery-charge-profile",
+						"tocad-madai");
+			if (ret)
+				return ret;
+		}
 	}
 	return 0;
 }
