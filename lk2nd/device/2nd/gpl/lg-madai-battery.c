@@ -9,6 +9,7 @@
 #include <boot.h>
 #include <debug.h>
 #include <libfdt.h>
+#include <malloc.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -56,8 +57,7 @@ static int madai_battery_detect(const void *dtb, int node)
 	(void)dtb;
 	(void)node;
 	madai_known_battery = madai_stock_battery(lk2nd_dev.cmdline);
-	if (madai_known_battery)
-		lk2nd_dev.battery = "ISL6296_L (TOCAD Madai)";
+	lk2nd_dev.battery = madai_known_battery ? "ISL6296_L (TOCAD Madai)" : NULL;
 	return 0;
 }
 
@@ -180,7 +180,8 @@ static int madai_battery_update_dt(void *dtb, const char *cmdline,
 	size = fdt_totalsize(dtb);
 	if (size <= 0)
 		return -FDT_ERR_BADVALUE;
-	copy = malloc(size);
+	/* LK's ARM32 malloc only guarantees pointer-size alignment. */
+	copy = memalign(8, size);
 	if (!copy)
 		return -FDT_ERR_NOSPACE;
 	ret = fdt_open_into(dtb, copy, size);
