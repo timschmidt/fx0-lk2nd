@@ -48,7 +48,9 @@
 #define DTB_MAGIC               0xedfe0dd0
 #define DTB_OFFSET              0x2C
 
+#ifndef DTB_PAD_SIZE
 #define DTB_PAD_SIZE            1024
+#endif
 #define DTBO_TABLE_MAGIC        0xD7B7AB1E
 #define DTBO_CUSTOM_MAX         4
 #define PLATFORM_FOUNDRY_SHIFT  16

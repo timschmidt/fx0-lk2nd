@@ -14,6 +14,10 @@
 
 	lk2nd,dtb-files = "msm8926-lg-madai";
 
+	battery {
+		compatible = "lg,madai-battery";
+	};
+
 	gpio-keys {
 		compatible = "gpio-keys";
 		down {
