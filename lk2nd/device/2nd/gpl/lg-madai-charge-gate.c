@@ -45,7 +45,7 @@ static int madai_charge_inhibit(void)
 
 	ret = madai_charge_write_off();
 	if (!ret) {
-		/* The first-stage firmware restores its wider window on reboot. */
+		/* Boot handoff can still carry the stock wider comparator window. */
 		if (spmi_reg_read(0, MADAI_BTC_CTRL, &value, 0)) {
 			ret = -FDT_ERR_INTERNAL;
 		} else {
