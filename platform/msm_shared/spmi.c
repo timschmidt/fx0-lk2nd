@@ -33,11 +33,13 @@
 #include <platform/iomap.h>
 #include <platform/irqs.h>
 #include <platform/interrupts.h>
+#include <platform/timer.h>
 #include <malloc.h>
 #include <platform.h>
 
 #define PMIC_ARB_V2 0x20010000
 #define CHNL_IDX(sid, pid) ((sid << 8) | pid)
+#define PMIC_ARB_TIMEOUT_US 1000
 
 static uint32_t pmic_arb_chnl_num;
 static uint32_t pmic_arb_owner_id;
@@ -45,6 +47,19 @@ static uint32_t pmic_arb_ver;
 static uint8_t *chnl_tbl;
 static uint32_t max_peripherals;
 static bool spmi_init_done;
+
+static uint32_t pmic_arb_wait_status(uintptr_t address)
+{
+	uint32_t status, timeout;
+
+	for (timeout = 0; timeout < PMIC_ARB_TIMEOUT_US; timeout++) {
+		status = readl(address);
+		if (status)
+			return status;
+		udelay(1);
+	}
+	return 0;
+}
 
 static void spmi_lookup_chnl_number(void)
 {
@@ -187,7 +202,11 @@ unsigned int pmic_arb_write_cmd(struct pmic_arb_cmd *cmd,
 	writel(val, PMIC_ARB_CHNLn_CMD0(pmic_arb_chnl_num));
 
 	/* Wait till CMD DONE status */
-	while (!(val = readl(PMIC_ARB_CHNLn_STATUS(pmic_arb_chnl_num))));
+	val = pmic_arb_wait_status(PMIC_ARB_CHNLn_STATUS(pmic_arb_chnl_num));
+	if (!val) {
+		dprintf(CRITICAL, "SPMI write command timed out\n");
+		return BIT(PMIC_ARB_CMD_FAILURE);
+	}
 
 	/* Check for errors */
 	error = val ^ (1 << PMIC_ARB_CMD_DONE);
@@ -288,10 +307,14 @@ unsigned int pmic_arb_read_cmd(struct pmic_arb_cmd *cmd,
 
 	/* Wait till CMD DONE status */
 #if SPMI_CORE_V2
-		while (!(val = readl(PMIC_ARB_OBS_CHNLn_STATUS(pmic_arb_chnl_num))));
+		val = pmic_arb_wait_status(PMIC_ARB_OBS_CHNLn_STATUS(pmic_arb_chnl_num));
 #else
-		while (!(val = readl(PMIC_ARB_CHNLn_STATUS(pmic_arb_chnl_num))));
+		val = pmic_arb_wait_status(PMIC_ARB_CHNLn_STATUS(pmic_arb_chnl_num));
 #endif
+	if (!val) {
+		dprintf(CRITICAL, "SPMI read command timed out\n");
+		return BIT(PMIC_ARB_CMD_FAILURE);
+	}
 
 	/* Check for errors */
 	error = val ^ (1 << PMIC_ARB_CMD_DONE);
