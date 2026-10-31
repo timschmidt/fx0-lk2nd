@@ -86,3 +86,13 @@ endif
 else ifneq ($(LK2ND_EXTLINUX), 0)
 $(error LK2ND_EXTLINUX must be 0 or 1)
 endif
+
+# Also read the reboot reason from the PMIC PON spare register, as written by
+# Linux qcom-pon reboot-mode. Useful when the stock bootloader consumes the
+# IMEM restart reason before lk2nd runs.
+LK2ND_PON_REBOOT_MODE ?= 0
+ifeq ($(LK2ND_PON_REBOOT_MODE), 1)
+DEFINES += LK2ND_PON_REBOOT_MODE=1
+else ifneq ($(LK2ND_PON_REBOOT_MODE), 0)
+$(error LK2ND_PON_REBOOT_MODE must be 0 or 1)
+endif
