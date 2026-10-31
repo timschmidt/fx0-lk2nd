@@ -15,6 +15,11 @@ search described below. Disabling it also excludes filesystem boot support from
 the image; fastboot boot remains available. Install a valid Android boot image at
 the required offset before selecting this configuration.
 
+If the stock bootloader consumes the IMEM restart reason before lk2nd runs,
+build with `LK2ND_PON_REBOOT_MODE=1` and describe the matching reboot modes on
+the Linux PON node (`mode-recovery = <1>`, `mode-bootloader = <2>`). lk2nd then
+also honours the reason stored in the PMIC PON spare register and clears it.
+
 ## Fastboot boot
 
 lk2nd provides a fastboot interface and allows one to boot an OS via USB. Same as

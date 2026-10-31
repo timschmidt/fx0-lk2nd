@@ -79,6 +79,10 @@
 #endif
 
 #include <reboot.h>
+#if LK2ND_PON_REBOOT_MODE
+#include <pm8x41_hw.h>
+#define LK2ND_PON_SOFT_RB_SPARE 0x88f
+#endif
 #include "image_verify.h"
 #include "recovery.h"
 #include "boot.h"
@@ -5606,6 +5610,26 @@ void aboot_init(const struct app_descriptor *app)
 	reboot_mode = check_hard_reboot_mode();
 #else
 	reboot_mode = check_reboot_mode();
+#endif
+#if LK2ND_PON_REBOOT_MODE
+	/*
+	 * Some stock bootloaders consume the IMEM restart reason before lk2nd
+	 * runs. Also accept the reason Linux qcom-pon reboot-mode stores in
+	 * PON SOFT_RB_SPARE bits 7:2, and scrub it like check_hard_reboot_mode().
+	 */
+	if (reboot_mode == 0) {
+		uint8_t spare = pm8x41_reg_read(LK2ND_PON_SOFT_RB_SPARE);
+
+		pm8x41_reg_write(LK2ND_PON_SOFT_RB_SPARE, spare & 0x03);
+		switch ((spare & 0xfc) >> 2) {
+		case 0x01:
+			reboot_mode = RECOVERY_MODE;
+			break;
+		case 0x02:
+			reboot_mode = FASTBOOT_MODE;
+			break;
+		}
+	}
 #endif
 	if (reboot_mode == RECOVERY_MODE)
 	{
